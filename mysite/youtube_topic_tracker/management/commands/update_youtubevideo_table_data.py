@@ -33,7 +33,7 @@ class Command(BaseCommand):
         parser.add_argument(
             '--batch_size',
             type=int,
-            default=200,
+            default=50,
             help='The batch size value used for bulk updating or inserting to the database table',
         )
         parser.add_argument(
@@ -131,12 +131,15 @@ class Command(BaseCommand):
         while(counter <= limit/50):
             if (len(chunks) >= limit):
                 break
+            publishedAfter_datetime = datetime.datetime.now(
+                tz=timezone.utc) - datetime.timedelta(days=30)
             params = {
                 'q': search_query,
                 'part': 'id,snippet',
                 'maxResults': 50,
                 'order': 'date',
                 'type': 'video',
+                'publishedAfter': publishedAfter_datetime,
             }
             if next_token:
                 params['pageToken'] = next_token
