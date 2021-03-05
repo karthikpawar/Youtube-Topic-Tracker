@@ -1,0 +1,1 @@
+* * * * * python3 /api_project/manage.py update_youtubevideo_table_data >> /var/log/cron.log 2>&1

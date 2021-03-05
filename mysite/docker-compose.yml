@@ -1,0 +1,42 @@
+version: '3.8'
+services:
+    db:
+        container_name: 'mysql_server'
+        image: mysql:5.7.31
+        restart: always
+        environment:
+            MYSQL_DATABASE: api_project
+            MYSQL_USER: admin
+            MYSQL_PASSWORD: root
+            MYSQL_ROOT_PASSWORD: root
+        volumes:
+            - .dbdata:/var/lib/mysql
+            - ./mysql_conf/ms.conf:/etc/mysql/conf.d/custom.cnf
+
+    web:
+        container_name: 'django_server'
+        build:
+            context: .
+            dockerfile: Dockerfile
+        ports:
+            - 8000:8000
+        volumes:
+            - .:/api_project
+        restart: on-failure
+        environment:
+            DJANGO_SETTINGS_MODULE: mysite.settings
+        depends_on:
+            - db
+
+    cron:
+        container_name: "cron_server"
+        build:
+            context: .
+            dockerfile: Dockerfile.cron
+        volumes:
+            - .:/api_project
+        environment:
+            DJANGO_SETTINGS_MODULE: mysite.settings
+        depends_on:
+            - web
+            - db
