@@ -33,7 +33,7 @@ class Command(BaseCommand):
         parser.add_argument(
             '--batch_size',
             type=int,
-            default=50,
+            default=settings.YT_API_BATCH_SIZE,
             help='The batch size value used for bulk updating or inserting to the database table',
         )
         parser.add_argument(
@@ -139,7 +139,7 @@ class Command(BaseCommand):
                 'maxResults': 50,
                 'order': 'date',
                 'type': 'video',
-                'publishedAfter': publishedAfter_datetime,
+                'publishedAfter': publishedAfter_datetime.isoformat(),
             }
             if next_token:
                 params['pageToken'] = next_token
@@ -149,7 +149,7 @@ class Command(BaseCommand):
                 if e.resp.status == 403:
                     self.set_youtube_api_handle()
                     continue
-                return (None, None)
+                raise e
             if not (successing_page_response['pageInfo']['totalResults'] > 0):
                 break
             chunks.extend(successing_page_response['items'])

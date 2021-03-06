@@ -1,11 +1,16 @@
 from django.contrib import admin
 from .models import CronLog, YoutubeVideo
-
 # Register your models here.
 
 
 class CronLogAdmin(admin.ModelAdmin):
-    list_display = ['name', 'status', 'started_at', 'ended_at']
+    def field_ended_at(self, obj):
+        return obj.ended_at.strftime("%d %b %Y %H:%M:%S")
+
+    def field_started_at(self, obj):
+        return obj.started_at.strftime("%d %b %Y %H:%M:%S")
+
+    list_display = ['name', 'status', 'field_ended_at', 'field_started_at']
 
 
 admin.site.register(CronLog, CronLogAdmin)
