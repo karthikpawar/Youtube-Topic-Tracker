@@ -3,16 +3,17 @@ from googleapiclient import discovery
 from googleapiclient.errors import HttpError
 from django.db.models import Q
 import youtube_topic_tracker.models as models
-from django.conf import settings
+from youtube_topic_tracker import settings
 from collections import deque
 from django.db import transaction
 import datetime
 from django.utils import timezone
+import math
 '''
 This management command updates the YoutubeVideo model
 periodically with latest information
 
-The periodicity of this command is handled by a crontab scheduled to run every 60 seconds
+The periodicity of this command is handled by ./crontab, and is scheduled to run every 60 seconds
 '''
 
 # declare API constants
@@ -33,7 +34,7 @@ class Command(BaseCommand):
         parser.add_argument(
             '--batch_size',
             type=int,
-            default=settings.YT_API_BATCH_SIZE,
+            default=settings.BATCH_SIZE,
             help='The batch size value used for bulk updating or inserting to the database table',
         )
         parser.add_argument(
@@ -46,10 +47,8 @@ class Command(BaseCommand):
         parser.add_argument(
             '--row_limit',
             type=int,
-            default=2,
-            help='The maximum number of rows to fetch via the youtube API ' + \
-                'in multiples of --batch_size for bulk updating or inserting ' + \
-                'to the YoutubeVideo table',
+            default=settings.ROW_LIMIT,
+            help='The maximum number of rows to fetch via the youtube API ',
         )
 
     def handle(self, *args, **options):
@@ -82,7 +81,8 @@ class Command(BaseCommand):
             Since Youtube Data API can only provide a maximum of 50 items per request,
             we stack the items to form a batch of size --batch-size and update the database
             '''
-            for x in range(row_limit):
+            update_factor = int(math.ceil(row_limit/batch_size))
+            for x in range(update_factor):
                 batch_list, next_token = self.get_batch(
                     search_query, next_token=next_token, limit=batch_size)
                 if not batch_list:
@@ -121,14 +121,10 @@ class Command(BaseCommand):
 
     def get_batch(self, search_query, limit, next_token=None):
         '''
-        Produces stacked video items of length --limit
+        Produces stacked video items of size --limit
         '''
         chunks = []
-        counter = 0
-        '''
-        Here a counter is used as a fallback to the 'break' statements
-        '''
-        while(counter <= limit/50):
+        while(True):
             if (len(chunks) >= limit):
                 break
             publishedAfter_datetime = datetime.datetime.now(
@@ -156,7 +152,6 @@ class Command(BaseCommand):
             next_token = successing_page_response['nextPageToken'] if ('nextPageToken' in successing_page_response) else None
             if not next_token:
                 break
-            counter = counter + 1
 
         return (chunks, next_token)
 
@@ -175,14 +170,12 @@ class Command(BaseCommand):
         Does a bulk insert using bulk_create() method of all new videos fetched in the last API request.
         This method return a Q filter query which is used to get the not-upto-date videos
         '''
-        new_video_ids = []
         new_youtubevideo_objects = []
         query = Q()
         for video_id, etag in id_to_etag.items():
             if video_id in existing_video_ids:
                 query |= Q(video_id=video_id, etag=etag)
                 continue
-            new_video_ids.append(video_id)
             youtubevideo_object = models.YoutubeVideo(
                 video_id=video_id,
                 etag=id_to_etag[video_id],

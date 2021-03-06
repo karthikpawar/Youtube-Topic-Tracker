@@ -54,12 +54,11 @@ Get latest information of youtube videos using Youtube Data API
  
    
  ## CronJob
-  - The CronJob is a standalone django management script/command: 
+  - A Django management command is used as a CronJob here: 
        update_youtubevideo_table_data.py
   - The arguments accepted by the management command are:
-       1. **--batch_size** : The batch size value used for bulk updating or inserting to the database table
-       2. **--search_query** : The search query used for the Youtube API search
-       3. **--row_limit** : The maximum number of rows to fetch via the youtube API in multiples of 
-                         `--batch_size` for bulk updating or inserting to the YoutubeVideo table
+       1. **--batch_size** : The batch size value used for bulk updating or inserting to the database table(default values: 50)
+       2. **--search_query** : The search query used for the Youtube API search(default value: 'pawrii')
+       3. **--row_limit** : The maximum number of rows to fetch via the youtube API(default value: '50)
 
    
