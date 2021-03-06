@@ -14,17 +14,8 @@ WORKDIR /api_project
 COPY requirements.txt /api_project/requirements.txt
 RUN pip3 install -r requirements.txt
 COPY . /api_project
-
-# # Copy hello-cron file to the cron.d directory
-# COPY crontab_1 /etc/cron.d/crontab_1
- 
-# # Give execution rights on the cron job
 RUN chmod 0644 /etc/cron.d/crontab
-
-# # Apply cron job
 RUN crontab /etc/cron.d/crontab
- 
-# # Create the log file to be able to run tail
 RUN touch /var/log/cron.log
 COPY wait-for-it.sh /wait-for-it.sh
 RUN chmod +x /wait-for-it.sh
